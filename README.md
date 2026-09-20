@@ -112,6 +112,17 @@ git add docs && git commit -m "add 2020 presidential map" && git push
   立委、議員都不必個別寫規則。選區名稱則取自涵蓋的行政區與中選會的選區代碼
   （例如「臺北市第 1 選區」）。
 
+## 授權
+
+程式碼以 [MIT License](LICENSE) 釋出。
+
+資料的授權與程式碼分開，各自依其來源：
+
+- **得票資料**來自中央選舉委員會選舉資料庫，屬政府資料開放授權條款（公開資料）。
+- **村里界圖**取自 [taiwan-atlas](https://github.com/dkaoster/taiwan-atlas)（MIT，
+  Copyright (c) 2020 Daniel Kao），原始資料為內政部國土測繪中心村里界圖。
+- `docs/` 底下產生的地圖是上述兩者的衍生成果，引用時請一併標示來源。
+
 ## 專案結構
 
 ```
