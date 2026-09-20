@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>台灣選舉結果村里地圖</title>
+<style>
+:root{
+  --bg:#f7f6f3; --surface:#fff; --ink:#1a1c1f; --ink2:#565c64; --ink3:#878d95;
+  --line:#e4e2dd; --line2:#cbc8c2; --accent:#1f5fd0;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#111315; --surface:#191c1f; --ink:#e9eaec; --ink2:#a6acb3; --ink3:#797f87;
+         --line:#292d32; --line2:#3a3f46; --accent:#7aa5f5; }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;
+  -webkit-font-smoothing:antialiased;}
+.wrap{max-width:760px;margin:0 auto;padding:48px 20px 64px}
+h1{font-size:26px;line-height:1.3;margin:0 0 8px;letter-spacing:-.01em}
+.lede{margin:0 0 28px;color:var(--ink2);font-size:14.5px}
+h2{font-size:13px;color:var(--ink3);font-weight:600;margin:32px 0 10px;letter-spacing:.02em}
+ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.card{display:grid;gap:2px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;
+  background:var(--surface);text-decoration:none;color:inherit;transition:border-color .12s}
+.card:hover{border-color:var(--line2)}
+.key{font-size:11.5px;color:var(--ink3);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.name{font-size:16px;font-weight:650;letter-spacing:-.01em}
+.meta{font-size:12.5px;color:var(--ink2)}
+.meta.dim{color:var(--ink3);font-size:11.5px}
+.empty{color:var(--ink3);font-size:14px}
+pre{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:12px 14px;overflow-x:auto;font-size:12.5px;line-height:1.6}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);
+  font-size:12.5px;color:var(--ink3);line-height:1.8}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>台灣選舉結果村里地圖</h1>
+  <p class="lede">把中央選舉委員會的得票資料抓到村里層級，疊上內政部村里界圖，
+  依各村里最高票候選人的政黨上色，得票率越高顏色越深。每張圖都是單一 HTML 檔，
+  含選區聚焦、行政層級切換與表格檢視。</p>
+
+  <h2>地圖</h2>
+  <ul>
+      <li>
+        <a class="card" href="2024-L0.html">
+          <span class="key">2024-L0</span>
+          <span class="name">第11屆立法委員選舉（區域）</span>
+          <span class="meta">第11屆立法委員選舉（2024-01-13）</span>
+          <span class="meta dim">4.4 MB · 產生於 2026-09-20 13:14</span>
+        </a>
+      </li>
+      <li>
+        <a class="card" href="2024-P0.html">
+          <span class="key">2024-P0</span>
+          <span class="name">第16任總統副總統選舉</span>
+          <span class="meta">第16任總統副總統選舉（2024-01-13）</span>
+          <span class="meta dim">4.3 MB · 產生於 2026-09-20 13:14</span>
+        </a>
+      </li>
+      <li>
+        <a class="card" href="2022-MAYOR.html">
+          <span class="key">2022-MAYOR</span>
+          <span class="name">2022 年縣市長（含直轄市長）．全國合併（3 場）</span>
+          <span class="meta">111年直轄市長選舉（2022-11-26）、111年縣市長選舉（2022-11-26）、111年嘉義市長重行選舉（2022-12-18）</span>
+          <span class="meta dim">4.4 MB · 產生於 2026-09-20 13:14</span>
+        </a>
+      </li>
+  </ul>
+
+  <h2>自己產生其他場次</h2>
+  <pre><code>git clone https://github.com/hychang32/twelect.git
+cd twelect
+python3 -m twelect list --year 2020
+python3 -m twelect build 2020-P0 --open</code></pre>
+
+  <footer>
+    資料來源：中央選舉委員會選舉資料庫 db.cec.gov.tw ／
+    內政部國土測繪中心村里界圖 2021.09（taiwan-atlas）。<br>
+    原始碼：<a href="https://github.com/hychang32/twelect">https://github.com/hychang32/twelect</a>　·　
+    索引頁更新於 2026-09-20 13:24
+  </footer>
+</div>
+</body>
+</html>

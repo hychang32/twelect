@@ -1,0 +1,869 @@
+<title>__TITLE__</title>
+<style>
+:root{
+  --bg:#f7f6f3; --surface:#ffffff; --surface2:#fbfaf8;
+  --ink:#1a1c1f; --ink2:#565c64; --ink3:#878d95;
+  --line:#e4e2dd; --line2:#cbc8c2;
+  --map-bg:#eeece7; --nodata:#d8d5cf; --outscope:#dedbd5; --hilite:#111318;
+  --accent:#1f5fd0;
+  --ramp-lo:0.975; --ramp-hi:0.42; --ramp-lo-c:0.08;
+}
+:root:not([data-theme="light"]){ color-scheme:light }
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#111315; --surface:#191c1f; --surface2:#1f2225;
+    --ink:#e9eaec; --ink2:#a6acb3; --ink3:#797f87;
+    --line:#292d32; --line2:#3a3f46;
+    --map-bg:#0c0e10; --nodata:#2d3238; --outscope:#24282c; --hilite:#ffffff;
+    --accent:#7aa5f5;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#111315; --surface:#191c1f; --surface2:#1f2225;
+  --ink:#e9eaec; --ink2:#a6acb3; --ink3:#797f87;
+  --line:#292d32; --line2:#3a3f46;
+  --map-bg:#0c0e10; --nodata:#2d3238; --outscope:#24282c; --hilite:#ffffff;
+  --accent:#7aa5f5;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1500px;margin:0 auto;padding-block:16px 32px;padding-left:20px;padding-right:20px}
+h1{font-size:21px;line-height:1.3;margin:0 0 3px;font-weight:650;letter-spacing:-.01em}
+.sub{margin:0;color:var(--ink2);font-size:13px}
+.sub b{color:var(--ink);font-weight:600}
+
+/* ---- 篩選列：一排，統管底下所有圖表 ---- */
+.controls{
+  display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;
+  margin:12px 0 10px;padding:8px 12px;
+  background:var(--surface);border:1px solid var(--line);border-radius:11px;
+}
+.ctl{display:flex;align-items:center;gap:7px}
+.ctl>label{font-size:12px;color:var(--ink3);white-space:nowrap}
+.seg{display:inline-flex;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:2px;gap:2px}
+.seg button{
+  appearance:none;border:0;background:transparent;color:var(--ink2);
+  font:inherit;font-size:12.5px;padding:5px 11px;border-radius:6px;cursor:pointer;white-space:nowrap;
+}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+select,input[type=search]{
+  font:inherit;font-size:12.5px;padding:5px 8px;border-radius:7px;
+  border:1px solid var(--line2);background:var(--surface);color:var(--ink);
+}
+.spacer{flex:1 1 auto}
+.iconbtn{
+  appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--ink2);
+  font:inherit;font-size:12.5px;padding:5px 10px;border-radius:7px;cursor:pointer;
+}
+.iconbtn:hover{color:var(--ink);border-color:var(--line2)}
+
+/* ---- 全國概況 ---- */
+.summary{display:flex;flex-wrap:wrap;align-items:center;gap:7px 14px;margin-bottom:10px}
+.scopebar{display:flex;align-items:baseline;gap:8px;white-space:nowrap}
+.scopebar b{font-size:14px;font-weight:650}
+.scopebar span{font-size:11.5px;color:var(--ink3)}
+.scopebar button{appearance:none;border:0;background:transparent;color:var(--accent);
+  font:inherit;font-size:11.5px;cursor:pointer;padding:0;text-decoration:underline}
+.tiles{display:flex;flex-wrap:wrap;gap:7px;flex:1 1 auto}
+.tile{
+  position:relative;overflow:hidden;display:flex;align-items:baseline;gap:6px;
+  padding:5px 11px 7px;border:1px solid var(--line);border-radius:9px;background:var(--surface);
+}
+.tile .dot{width:8px;height:8px;border-radius:2px;flex:none;align-self:center}
+.tile .nm{font-size:12px;color:var(--ink2);white-space:nowrap}
+.tile .pc{font-size:15px;font-weight:650;letter-spacing:-.01em}
+.tile .pc small{font-size:11px;font-weight:500;color:var(--ink2);margin-left:1px}
+.tile .vt{font-size:11px;color:var(--ink3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tile .bar{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--line)}
+.tile .bar i{display:block;height:100%}
+
+/* ---- 主要區塊 ---- */
+main{display:grid;grid-template-columns:minmax(0,1fr) 316px;gap:16px;align-items:start}
+main>aside{position:sticky;top:16px}
+@media (max-width:1000px){ main>aside{position:static} }
+@media (max-width:1000px){ main{grid-template-columns:minmax(0,1fr)} }
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.mapcard{position:relative;overflow:hidden;background:var(--map-bg)}
+#map{display:block;width:100%;height:auto;touch-action:none;cursor:grab}
+#map.dragging{cursor:grabbing}
+#villages path{stroke-width:.5;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+#countyb path{fill:none;stroke:var(--ink);stroke-opacity:.34;stroke-width:1.4;
+  vector-effect:non-scaling-stroke;stroke-linejoin:round;pointer-events:none}
+#townb path{fill:none;stroke:var(--ink);stroke-opacity:.16;stroke-width:.7;
+  vector-effect:non-scaling-stroke;stroke-linejoin:round;pointer-events:none}
+#hilite{fill:none;stroke:var(--hilite);stroke-width:2;stroke-linejoin:round;pointer-events:none;vector-effect:non-scaling-stroke}
+.insetbox{fill:none;stroke:var(--ink);stroke-opacity:.18;stroke-width:1;rx:8}
+.insetlabel{fill:var(--ink2);font-size:15px;font-weight:600}
+.insetzoom{fill:var(--ink3);font-size:12px}
+.mapbtns{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:5px}
+.mapbtns button{
+  width:30px;height:30px;border-radius:7px;border:1px solid var(--line);
+  background:var(--surface);color:var(--ink2);font-size:15px;line-height:1;cursor:pointer;
+}
+.mapbtns button:hover{color:var(--ink)}
+.maphint{position:absolute;left:12px;bottom:10px;font-size:11px;color:var(--ink3)}
+
+/* ---- 提示框 ---- */
+#tip{
+  position:fixed;z-index:20;pointer-events:none;opacity:0;transition:opacity .09s;
+  background:var(--surface);border:1px solid var(--line2);border-radius:9px;
+  box-shadow:0 6px 22px rgba(0,0,0,.16);padding:9px 11px;min-width:196px;max-width:280px;
+}
+#tip.on{opacity:1}
+#tip .t1{font-size:13.5px;font-weight:650}
+#tip .t2{font-size:11.5px;color:var(--ink3);margin-bottom:7px}
+.rows{display:grid;grid-template-columns:auto 1fr auto auto;gap:2px 7px;align-items:center;font-size:12px}
+.rows .dot{width:8px;height:8px;border-radius:2px}
+.rows .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px}
+.rows .vn,.rows .pcn{font-variant-numeric:tabular-nums;text-align:right;color:var(--ink2)}
+.rows .pcn{font-weight:600;color:var(--ink);min-width:44px}
+.rows .win .nm{font-weight:650}
+#tip .tot{margin-top:6px;padding-top:5px;border-top:1px solid var(--line);
+  font-size:11px;color:var(--ink3);font-variant-numeric:tabular-nums}
+
+/* ---- 側欄 ---- */
+.panel{padding:13px 15px 15px}
+.panel h2{font-size:12px;font-weight:600;color:var(--ink3);margin:0 0 9px;letter-spacing:.02em}
+.panel+.panel{margin-top:14px}
+.lgrow{display:grid;grid-template-columns:1fr;gap:3px;margin-bottom:11px}
+.lgrow .lab{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12.5px}
+.lgrow .lab b{font-weight:600}
+.lgrow .lab span{color:var(--ink3);font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.lgrow .strip{height:11px;border-radius:3px;border:1px solid var(--line)}
+.axis{display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);
+  font-variant-numeric:tabular-nums;margin-top:-4px}
+.note{font-size:11.5px;color:var(--ink3);margin:10px 0 0;line-height:1.5}
+.swatchlist{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--ink2)}
+.swatchlist span{display:flex;align-items:center;gap:5px}
+.swatchlist i{width:10px;height:10px;border-radius:2px;display:block}
+#detail .empty{color:var(--ink3);font-size:12.5px}
+
+/* ---- 表格檢視 ---- */
+.tablecard{padding:13px 15px 16px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;max-width:1020px;font-size:12.5px}
+th,td{padding:5px 9px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child,th:nth-child(2),td:nth-child(2),th:nth-child(3),td:nth-child(3){text-align:left}
+thead th{position:sticky;top:0;background:var(--surface);color:var(--ink3);font-weight:600;font-size:11.5px;z-index:1}
+td{font-variant-numeric:tabular-nums}
+td.win{font-weight:650}
+td .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.tabletop{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.more{margin-top:11px}
+footer{margin-top:22px;font-size:11.5px;color:var(--ink3);line-height:1.65}
+footer a{color:var(--ink2)}
+.warn{color:#b4551f;font-size:11.5px;margin-top:6px}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .warn{color:#e0a06a}}
+:root[data-theme="dark"] .warn{color:#e0a06a}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1 id="title"></h1>
+    <p class="sub" id="subtitle"></p>
+  </header>
+
+  <div class="controls" id="controls">
+    <div class="ctl">
+      <label>上色依據</label>
+      <div class="seg" id="modeSeg" role="group">
+        <button data-v="lead" aria-pressed="true">領先政黨</button>
+        <button data-v="party" aria-pressed="false">單一政黨得票率</button>
+      </div>
+    </div>
+    <div class="ctl" id="partyCtl" hidden>
+      <label for="partySel">政黨</label>
+      <select id="partySel"></select>
+    </div>
+    <div class="ctl" id="distCtl">
+      <label for="distSel">選區</label>
+      <select id="distSel"></select>
+    </div>
+    <div class="ctl" id="scaleCtl">
+      <label>色階範圍</label>
+      <div class="seg" id="scaleSeg" role="group">
+        <button data-v="district" aria-pressed="true">各選區獨立</button>
+        <button data-v="global" aria-pressed="false">跨選區一致</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <label>行政層級</label>
+      <div class="seg" id="levelSeg" role="group">
+        <button data-v="v" aria-pressed="true">村里</button>
+        <button data-v="t" aria-pressed="false">鄉鎮市區</button>
+        <button data-v="c" aria-pressed="false">縣市</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <label>檢視</label>
+      <div class="seg" id="viewSeg" role="group">
+        <button data-v="map" aria-pressed="true">地圖</button>
+        <button data-v="table" aria-pressed="false">表格</button>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <button class="iconbtn" id="themeBtn" title="切換深淺色">◐ 主題</button>
+  </div>
+
+  <div class="summary">
+    <div class="scopebar" id="scopeBar"></div>
+    <div class="tiles" id="tiles"></div>
+  </div>
+
+  <main id="mapView">
+    <div class="card mapcard">
+      <svg id="map" role="img" aria-label="全台村里得票率地圖">
+        <defs>
+          <pattern id="nodata" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="5" height="5" fill="var(--nodata)"></rect>
+            <line x1="0" y1="0" x2="0" y2="5" stroke="var(--surface)" stroke-width="1.6"></line>
+          </pattern>
+        </defs>
+        <g id="zoom">
+          <g id="villages"></g>
+          <g id="townb"></g>
+          <g id="countyb"></g>
+          <g id="boxes"></g>
+          <path id="hilite" d=""></path>
+        </g>
+      </svg>
+      <div class="mapbtns">
+        <button id="zin" title="放大">＋</button>
+        <button id="zout" title="縮小">－</button>
+        <button id="zreset" title="回到全圖">⟲</button>
+        <button id="zsize" title="地圖大小：配合螢幕／滿版">⤢</button>
+      </div>
+      <div class="maphint" id="maphint">滾輪縮放 · 拖曳平移 · 點選鎖定</div>
+    </div>
+
+    <aside>
+      <div class="card panel">
+        <h2 id="legendTitle">圖例</h2>
+        <div id="legend"></div>
+        <div class="axis" id="legendAxis"></div>
+        <p class="note" id="legendNote"></p>
+      </div>
+      <div class="card panel" id="detail">
+        <h2>明細</h2>
+        <p class="empty">把游標移到地圖上任一個區域，或點選鎖定。</p>
+      </div>
+    </aside>
+  </main>
+
+  <section class="card tablecard" id="tableView" hidden>
+    <div class="tabletop">
+      <input type="search" id="tableSearch" placeholder="搜尋縣市／鄉鎮市區／村里…" size="26">
+      <span class="sub" id="tableCount"></span>
+    </div>
+    <div id="tableBox"></div>
+    <button class="iconbtn more" id="moreBtn" hidden>顯示更多</button>
+  </section>
+
+  <div id="tip" role="tooltip"></div>
+
+  <footer>
+    <div id="sources"></div>
+    <div id="warnings"></div>
+  </footer>
+</div>
+
+<script id="payload" type="application/json">__DATA__</script>
+<script>
+"use strict";
+const DATA = JSON.parse(document.getElementById('payload').textContent);
+
+/* ------------------------------------------------------------------ *
+ * 色彩：OKLCH 單色階（同一色相，由淺到深），深色模式另外取一組錨點
+ * ------------------------------------------------------------------ */
+const M1=[[0.4122214708,0.5363325363,0.0514459929],[0.2119034982,0.6806995451,0.1073969566],[0.0883024619,0.2817188376,0.6299787005]];
+const M2=[[0.2104542553,0.7936177850,-0.0040720468],[1.9779984951,-2.4285922050,0.4505937099],[0.0259040371,0.7827717662,-0.8086757660]];
+const M2i=[[1,0.3963377774,0.2158037573],[1,-0.1055613458,-0.0638541728],[1,-0.0894841775,-1.2914855480]];
+const M1i=[[4.0767416621,-3.3077115913,0.2309699292],[-1.2684380046,2.6097574011,-0.3413193965],[-0.0041960863,-0.7034186147,1.7076147010]];
+const s2l=c=>c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4);
+const l2s=c=>c<=0.0031308?12.92*c:1.055*Math.pow(c,1/2.4)-0.055;
+const mul=(m,v)=>m.map(r=>r[0]*v[0]+r[1]*v[1]+r[2]*v[2]);
+
+function hexToOklch(hex){
+  const n=parseInt(hex.slice(1),16);
+  const rgb=[(n>>16&255)/255,(n>>8&255)/255,(n&255)/255].map(s2l);
+  const lms=mul(M1,rgb).map(Math.cbrt);
+  const [L,a,b]=mul(M2,lms);
+  return {L, C:Math.hypot(a,b), H:Math.atan2(b,a)};
+}
+function oklchToRgb(L,C,H){
+  const lab=[L,C*Math.cos(H),C*Math.sin(H)];
+  const lms=mul(M2i,lab).map(v=>v*v*v);
+  return mul(M1i,lms);
+}
+function oklchToHex(L,C,H){
+  // 超出 sRGB 色域時逐步降彩度，保住色相與明度
+  let lo=0, hi=C, rgb=oklchToRgb(L,C,H);
+  const ok=v=>v.every(c=>c>=-0.0008&&c<=1.0008);
+  if(!ok(rgb)){
+    for(let i=0;i<18;i++){ const m=(lo+hi)/2; rgb=oklchToRgb(L,m,H); ok(rgb)?lo=m:hi=m; }
+    rgb=oklchToRgb(L,lo,H);
+  }
+  return '#'+rgb.map(c=>{
+    const v=Math.round(Math.min(1,Math.max(0,l2s(c)))*255);
+    return v.toString(16).padStart(2,'0');
+  }).join('');
+}
+
+let DARK=false;
+const rampCache=new Map();
+/** 傳回 t(0..1) -> hex 的色階函式。所有政黨共用同一段明度範圍，
+ *  深淺才能跨政黨互相比較；政黨之間靠色相與彩度區分。 */
+function rampFor(hex){
+  const key=hex+(DARK?'#d':'#l');
+  if(rampCache.has(key)) return rampCache.get(key);
+  const {C,H}=hexToOklch(hex);
+  const L0=DARK?0.205:0.972, L1=DARK?0.760:0.420;
+  const C0=C*0.10, C1=C;
+  const steps=new Array(65);
+  for(let i=0;i<65;i++){
+    const t=i/64;
+    steps[i]=oklchToHex(L0+(L1-L0)*t, C0+(C1-C0)*t, H);
+  }
+  const fn=t=>steps[Math.max(0,Math.min(64,Math.round(t*64)))];
+  fn.steps=steps;
+  rampCache.set(key,fn);
+  return fn;
+}
+
+/* ------------------------------------------------------------------ *
+ * 資料整理
+ * ------------------------------------------------------------------ */
+const {parties, cands, counties, towns, districts, units, villages, layout, meta} = DATA;
+const partyOfCand = cands.map(c=>c.p);
+const nV = villages.length, nU = units.length;
+
+/* 票數掛在「投開票單位」上：多半就是一個村里，連江縣則是數個村合併計票。
+   幾何掛在村里上，村里只記自己屬於哪個單位，往上加總才不會重複計算。 */
+const uTotal=new Float64Array(nU), uWin=new Int32Array(nU).fill(-1), uShare=new Float64Array(nU);
+const uByCand=units.map(u=>new Map(u.s));
+units.forEach((u,i)=>{
+  let tot=0,best=-1,bv=-1;
+  for(const [ci,n] of u.s){ tot+=n; if(n>bv){bv=n;best=ci;} }
+  uTotal[i]=tot; uWin[i]=best; uShare[i]=tot?bv/tot:0;
+});
+
+function aggregate(cellOfUnit, count){
+  const tot=new Float64Array(count);
+  const byCand=Array.from({length:count},()=>new Map());
+  const distVotes=Array.from({length:count},()=>new Map());
+  units.forEach((u,i)=>{
+    const k=cellOfUnit(i); if(k<0) return;
+    tot[k]+=uTotal[i];
+    const m=byCand[k];
+    for(const [ci,n] of u.s) m.set(ci,(m.get(ci)||0)+n);
+    if(u.k>=0) distVotes[k].set(u.k,(distVotes[k].get(u.k)||0)+uTotal[i]);
+  });
+  const win=new Int32Array(count).fill(-1), share=new Float64Array(count);
+  // 鄉鎮市區可能被切進兩個立委選區，取票數較多的那個當代表
+  const dist=new Int32Array(count).fill(-1);
+  for(let k=0;k<count;k++){
+    let best=-1,bv=-1;
+    byCand[k].forEach((n,ci)=>{ if(n>bv){bv=n;best=ci;} });
+    win[k]=best; share[k]=tot[k]?bv/tot[k]:0;
+    let bd=-1,bdv=-1;
+    distVotes[k].forEach((n,d)=>{ if(n>bdv){bdv=n;bd=d;} });
+    dist[k]=bd;
+  }
+  return {tot,byCand,win,share,count,dist};
+}
+const AGG={
+  v:{tot:uTotal, byCand:uByCand, win:uWin, share:uShare, count:nU, label:'村里',
+     dist:Int32Array.from(units,u=>u.k),
+     cellOf:i=>villages[i].u,
+     nameOf:k=>units[k].n,
+     ctx:k=>{const t=units[k].t; return t<0?'':counties[towns[t].c].name+' '+towns[t].name;},
+     extra:k=>units[k].m>1?`此為 ${units[k].m} 個村里合併計票的投開票區`:''},
+  t:Object.assign(aggregate(i=>units[i].t, towns.length),{label:'鄉鎮市區',
+     cellOf:i=>villages[i].t, nameOf:k=>towns[k].name,
+     ctx:k=>counties[towns[k].c].name, extra:()=>''}),
+  c:Object.assign(aggregate(i=>units[i].t<0?-1:towns[units[i].t].c, counties.length),{label:'縣市',
+     cellOf:i=>towns[villages[i].t].c, nameOf:k=>counties[k].name,
+     ctx:()=>'全國', extra:()=>''}),
+};
+
+// 各選區的政黨票數
+const distParty=districts.map(()=>new Map());
+const distTotal=new Float64Array(districts.length);
+units.forEach(u=>{
+  if(u.k<0) return;
+  const m=distParty[u.k];
+  for(const [ci,n] of u.s){ m.set(partyOfCand[ci],(m.get(partyOfCand[ci])||0)+n); distTotal[u.k]+=n; }
+});
+
+// 全國總計
+const nationalByParty=new Map();
+let nationalTotal=0;
+cands.forEach((c,i)=>{ nationalByParty.set(c.p,(nationalByParty.get(c.p)||0)+c.total); nationalTotal+=c.total; });
+const partyRank=[...nationalByParty.entries()].sort((a,b)=>b[1]-a[1]);
+
+const fmt=n=>n.toLocaleString('zh-TW');
+const pct=(x,d=1)=>(x*100).toFixed(d)+'%';
+
+/* ------------------------------------------------------------------ *
+ * 狀態
+ * ------------------------------------------------------------------ */
+const state={mode:'lead', party:partyRank.length?partyRank[0][0]:0, level:'v',
+             view:'map', locked:-1, district:-1, scale:'district'};
+const multiDistrict = districts.length>1;
+
+function valueAt(k){            // 目前模式下某單元的「深淺值」與領先者
+  const A=AGG[state.level];
+  if(state.mode==='lead') return {share:A.share[k], party:A.win[k]<0?-1:partyOfCand[A.win[k]]};
+  let v=0; const m=A.byCand[k];
+  m.forEach((n,ci)=>{ if(partyOfCand[ci]===state.party) v+=n; });
+  return {share:A.tot[k]?v/A.tot[k]:0, party:state.party, has:m.size>0};
+}
+
+/* 色階範圍。地方選舉每個選區的候選人不同、競爭程度也不同，把全國拉成同一條
+   尺規會讓「台北市長 55%」和「雲林縣長 55%」看起來一樣深卻不可比，所以預設
+   讓每個選區各自標準化；單位數太少的選區（例如村里長，一個選區只有一個村里）
+   只有一個單元的選區（例如村里長，一個選區就是一個村里，或是縣市層級下
+   一個縣市長選區只對應一格）標準化沒有意義，退回用全體的尺規。 */
+let domains={g:[0,1], d:new Map()};
+function quant(vals){
+  if(!vals.length) return [0,1];
+  vals.sort((a,b)=>a-b);
+  const q=p=>vals[Math.min(vals.length-1,Math.max(0,Math.round(p*(vals.length-1))))];
+  let lo=Math.floor(q(0.02)*20)/20, hi=Math.ceil(q(0.98)*20)/20;
+  if(state.mode==='party') lo=Math.min(lo,Math.max(0,hi-0.15));
+  if(hi-lo<0.1) hi=Math.min(1,lo+0.1);
+  if(hi<=lo) hi=Math.min(1,lo+0.05);
+  return [lo,hi];
+}
+function computeDomains(){
+  const A=AGG[state.level], all=[], per=new Map();
+  for(let k=0;k<A.count;k++){
+    if(!A.tot[k]||!inFocus(k)) continue;
+    const sh=valueAt(k).share;
+    all.push(sh);
+    const d=A.dist[k];
+    if(d>=0){ let a=per.get(d); if(!a){a=[];per.set(d,a);} a.push(sh); }
+  }
+  const g=quant(all), m=new Map();
+  per.forEach((v,d)=>m.set(d, v.length>1 ? quant(v) : g));
+  domains={g,d:m};
+}
+function domainOf(k){
+  if(state.scale==='global'||!multiDistrict) return domains.g;
+  return domains.d.get(AGG[state.level].dist[k]) || domains.g;
+}
+const tIn=(sh,dom)=>Math.max(0,Math.min(1,(sh-dom[0])/(dom[1]-dom[0]||1)));
+const inFocus=k=>state.district<0 || AGG[state.level].dist[k]===state.district;
+
+/* ------------------------------------------------------------------ *
+ * 地圖
+ * ------------------------------------------------------------------ */
+const svg=document.getElementById('map');
+/* viewBox 隨聚焦的選區改變，地圖框的長寬比才會跟著選區走，
+   不會把基隆市塞進一個為整個台灣設計的直長框裡。縮放平移的 transform
+   則一律在 viewBox 座標系內運作。 */
+let vb=[0,0,layout.w,layout.h];
+
+/* 地圖預設「配合螢幕」：把高度壓到目前視窗還剩下的空間，整張圖不用捲動就看得完
+   （13 吋筆電聚焦到臺北市也能一次看完）。想看細節時切成「滿版」，地圖改成跟著
+   欄寬走、高度由長寬比決定。 */
+let mapSize='fit';
+try{ const v=localStorage.getItem('twelect-mapsize'); if(v==='fit'||v==='full') mapSize=v; }catch(e){}
+
+function fitMap(){
+  const card=svg.parentElement, btn=document.getElementById('zsize');
+  if(mapSize==='full'){
+    svg.style.height='';
+    btn.textContent='⤡'; btn.title='地圖大小：改為配合螢幕';
+  }else{
+    const top=card.getBoundingClientRect().top+window.scrollY;
+    svg.style.height=Math.max(320, window.innerHeight-top-20)+'px';
+    btn.textContent='⤢'; btn.title='地圖大小：改為滿版';
+  }
+  document.getElementById('maphint').textContent=
+    (mapSize==='fit'?'配合螢幕':'滿版')+' · 滾輪縮放 · 拖曳平移 · 點選鎖定';
+}
+
+function applyViewBox(){
+  svg.setAttribute('viewBox', vb.join(' '));
+  svg.style.aspectRatio = vb[2]+' / '+vb[3];
+}
+applyViewBox();
+document.getElementById('villages').innerHTML =
+  villages.map((v,i)=>`<path data-i="${i}" d="${v.d}"></path>`).join('');
+document.getElementById('townb').innerHTML =
+  DATA.borders.town.map(d=>`<path d="${d}"></path>`).join('');
+document.getElementById('countyb').innerHTML =
+  DATA.borders.county.map(d=>`<path d="${d}"></path>`).join('');
+document.getElementById('boxes').innerHTML = layout.boxes.map(b=>
+  `<rect class="insetbox" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="8"></rect>`+
+  `<text class="insetlabel" x="${b.x+11}" y="${b.y+19}">${b.label}</text>`+
+  `<text class="insetzoom" x="${b.x+b.w-11}" y="${b.y+19}" text-anchor="end">×${b.zoom}</text>`
+).join('');
+
+const cells=[...document.querySelectorAll('#villages path')];
+const hilite=document.getElementById('hilite');
+
+function paint(){
+  computeDomains();
+  const A=AGG[state.level];
+  const cache=new Map();
+  for(let i=0;i<nV;i++){
+    const k=A.cellOf(i);
+    let css=cache.get(k);
+    if(css===undefined){
+      if(k<0 || !A.tot[k]) css='fill:url(#nodata);stroke:none';
+      else if(!inFocus(k)) css='fill:var(--outscope);stroke:var(--outscope)';
+      else{
+        const {share,party}=valueAt(k);
+        const hex = party<0 ? 'var(--nodata)' : rampFor(parties[party].color)(tIn(share,domainOf(k)));
+        css='fill:'+hex+';stroke:'+hex;
+      }
+      cache.set(k,css);
+    }
+    cells[i].style.cssText=css;
+  }
+  document.getElementById('townb').style.display = state.level==='c' ? 'none' : '';
+  renderLegend(); renderTiles(); renderScope(); fitMap();
+}
+
+/* 縮放與平移 */
+let view={k:1,x:0,y:0};
+function applyView(){ document.getElementById('zoom').setAttribute('transform',`translate(${view.x} ${view.y}) scale(${view.k})`); }
+function zoomAt(cx,cy,f){
+  const k=Math.max(0.3,Math.min(26,view.k*f));
+  const r=k/view.k;
+  view.x=cx-(cx-view.x)*r; view.y=cy-(cy-view.y)*r; view.k=k;
+  if(k===1){view.x=vb[0]*(1-k);view.y=vb[1]*(1-k);}
+  applyView();
+}
+function contentRect(){          // preserveAspectRatio 是 meet，內容會置中留白
+  const r=svg.getBoundingClientRect();
+  const s=Math.min(r.width/vb[2], r.height/vb[3]) || 1;
+  return {x:r.left+(r.width-vb[2]*s)/2, y:r.top+(r.height-vb[3]*s)/2, s};
+}
+function svgPoint(e){
+  const q=contentRect();
+  return [vb[0]+(e.clientX-q.x)/q.s, vb[1]+(e.clientY-q.y)/q.s];
+}
+svg.addEventListener('wheel',e=>{e.preventDefault();const[x,y]=svgPoint(e);zoomAt(x,y,e.deltaY<0?1.22:1/1.22);},{passive:false});
+let drag=null;
+svg.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,vx:view.x,vy:view.y,moved:false};svg.setPointerCapture(e.pointerId);svg.classList.add('dragging');});
+svg.addEventListener('pointerup',e=>{svg.classList.remove('dragging');
+  if(drag&&!drag.moved){ const t=e.target.closest('#villages path');
+    state.locked = t? (state.locked===+t.dataset.i?-1:+t.dataset.i) : -1; showDetail(state.locked); }
+  drag=null;});
+function focusDistrict(d){
+  state.district = d;
+  if(d>=0){
+    const [x0,y0,x1,y1]=districts[d].b;
+    const pad=Math.max(0.8,(x1-x0+y1-y0)*0.035);   // 留白按選區大小等比，立委選區才不會縮成一小塊
+    vb=[x0-pad, y0-pad, Math.max(1,x1-x0+pad*2), Math.max(1,y1-y0+pad*2)];
+  }else{
+    vb=[0,0,layout.w,layout.h];
+  }
+  applyViewBox();
+  view={k:1,x:0,y:0};
+  applyView();
+  state.locked=-1; showDetail(-1);
+  const sel=document.getElementById('distSel');
+  if(sel.value!==String(d)) sel.value=String(d);
+  refresh();
+}
+
+document.getElementById('zin').onclick=()=>zoomAt(vb[0]+vb[2]/2,vb[1]+vb[3]/2,1.5);
+document.getElementById('zout').onclick=()=>zoomAt(vb[0]+vb[2]/2,vb[1]+vb[3]/2,1/1.5);
+document.getElementById('zreset').onclick=()=>{view={k:1,x:0,y:0};applyView();};
+document.getElementById('zsize').onclick=()=>{
+  mapSize = mapSize==='fit' ? 'full' : 'fit';
+  try{ localStorage.setItem('twelect-mapsize', mapSize); }catch(e){}
+  fitMap();
+};
+let fitTimer=0;
+addEventListener('resize',()=>{ clearTimeout(fitTimer); fitTimer=setTimeout(fitMap,120); });
+
+const tip=document.getElementById('tip');
+svg.addEventListener('pointermove',e=>{
+  if(drag){
+    const s=1/contentRect().s;
+    if(Math.abs(e.clientX-drag.x)+Math.abs(e.clientY-drag.y)>3) drag.moved=true;
+    view.x=drag.vx+(e.clientX-drag.x)*s; view.y=drag.vy+(e.clientY-drag.y)*s; applyView(); return;
+  }
+  const t=e.target.closest('#villages path');
+  if(!t){ tip.classList.remove('on'); hilite.setAttribute('d',''); if(state.locked<0) showDetail(-1); return; }
+  const i=+t.dataset.i;
+  hilite.setAttribute('d', unionPath(i));
+  tip.innerHTML=cellHTML(i);
+  tip.classList.add('on');
+  const w=tip.offsetWidth,h=tip.offsetHeight;
+  tip.style.left=Math.min(innerWidth-w-10,e.clientX+16)+'px';
+  tip.style.top=Math.max(8,Math.min(innerHeight-h-10,e.clientY-h/2))+'px';
+  if(state.locked<0) showDetail(i);
+});
+svg.addEventListener('pointerleave',()=>{tip.classList.remove('on');hilite.setAttribute('d','');if(state.locked<0)showDetail(-1);});
+
+const unitPathCache=new Map();
+function unionPath(i){       // 把游標所在的整個單元圈起來
+  const A=AGG[state.level], k=A.cellOf(i);
+  if(k<0) return villages[i].d;
+  if(state.level==='c') return DATA.borders.county[k]||villages[i].d;
+  if(state.level==='t') return DATA.borders.town[k]||villages[i].d;
+  if(units[k].m===1) return villages[i].d;
+  if(unitPathCache.has(k)) return unitPathCache.get(k);
+  let d='';                                  // 連江縣：數個村合併計票
+  for(let j=0;j<nV;j++) if(villages[j].u===k) d+=villages[j].d;
+  unitPathCache.set(k,d); return d;
+}
+
+/* ------------------------------------------------------------------ *
+ * 明細 / 提示框
+ * ------------------------------------------------------------------ */
+function rowsHTML(m, total, limit){
+  const arr=[...m.entries()].sort((a,b)=>b[1]-a[1]);
+  const top=limit?arr.slice(0,limit):arr;
+  const best=arr.length?arr[0][1]:0;
+  return `<div class="rows">`+top.map(([ci,n])=>{
+    const c=cands[ci], p=parties[c.p];
+    return `<i class="dot" style="background:${p.color}"></i>`+
+      `<span class="nm" title="${c.name}">${c.name}</span>`+
+      `<span class="vn">${fmt(n)}</span>`+
+      `<span class="pcn">${total?pct(n/total):'—'}</span>`;
+  }).join('')+`</div>`+(limit&&arr.length>limit?`<div class="tot">另有 ${arr.length-limit} 位候選人</div>`:'');
+}
+function cellHTML(i,limit=5){
+  const A=AGG[state.level], k=A.cellOf(i);
+  const v=villages[i];
+  if(k<0 || !A.tot[k])
+    return `<div class="t1">${v.n}</div>`+
+      `<div class="t2">${counties[towns[v.t].c].name} ${towns[v.t].name}</div>`+
+      `<div class="tot">這場選舉查無此村里的得票資料</div>`;
+  const note=A.extra(k);
+  return `<div class="t1">${A.nameOf(k)}</div><div class="t2">${A.ctx(k)} · ${A.label}</div>`+
+    rowsHTML(A.byCand[k],A.tot[k],limit)+
+    `<div class="tot">有效票 ${fmt(A.tot[k])}${note?' · '+note:''}</div>`;
+}
+function showDetail(i){
+  const el=document.getElementById('detail');
+  if(i<0){ el.innerHTML='<h2>明細</h2><p class="empty">把游標移到地圖上任一個區域，或點選鎖定。</p>'; return; }
+  el.innerHTML='<h2>明細'+(state.locked>=0?'（已鎖定，再點一次解除）':'')+'</h2>'+cellHTML(i,0);
+}
+
+/* ------------------------------------------------------------------ *
+ * 圖例 / 概況
+ * ------------------------------------------------------------------ */
+function activeDomain(){
+  if(state.district>=0 && state.scale==='district' && multiDistrict)
+    return domains.d.get(state.district)||domains.g;
+  return domains.g;
+}
+function axisHTML(){
+  if(multiDistrict && state.scale==='district' && state.district<0)
+    return '<span>淡</span><span>每個選區各自標準化</span><span>深</span>';
+  const [lo,hi]=activeDomain();
+  return `<span>${lo<=0?'0%':'≤'+pct(lo,0)}</span><span>${pct((lo+hi)/2,0)}</span>`+
+         `<span>${hi>=1?'100%':'≥'+pct(hi,0)}</span>`;
+}
+function scaleNote(){
+  if(!multiDistrict) return '';
+  return state.scale==='district'
+    ? '色階範圍為<b>各選區獨立</b>：每個選區拿自己的得票率分布當尺規，深淺只能在同一個選區內比較。'
+    : '色階範圍為<b>跨選區一致</b>：全部選區共用同一把尺規，可以跨選區比較，但競爭激烈程度不同的選區會被拉平。';
+}
+function renderLegend(){
+  const A=AGG[state.level], box=document.getElementById('legend');
+  const grad=hex=>{const f=rampFor(hex);return 'linear-gradient(to right,'+
+    [0,.25,.5,.75,1].map(t=>f(t)).join(',')+')';};
+  const scope = state.district>=0 ? districts[state.district].n : '全國';
+  if(state.mode==='lead'){
+    const cnt=new Map(); let total=0;
+    for(let k=0;k<A.count;k++){
+      if(!A.tot[k]||!inFocus(k)) continue;
+      const p=partyOfCand[A.win[k]];
+      cnt.set(p,(cnt.get(p)||0)+1); total++;
+    }
+    const rank=[...cnt.entries()].sort((a,b)=>b[1]-a[1]);
+    document.getElementById('legendTitle').textContent=`領先政黨 · ${scope}（${fmt(total)} 個${A.label}）`;
+    box.innerHTML=rank.map(([p,n])=>
+      `<div class="lgrow"><div class="lab"><b>${parties[p].name}</b><span>領先 ${fmt(n)} 個${A.label}</span></div>`+
+      `<div class="strip" style="background:${grad(parties[p].color)}"></div></div>`).join('');
+    document.getElementById('legendNote').innerHTML=
+      `顏色＝該${A.label}最高票候選人的所屬政黨，深淺＝其得票率。無黨籍及未經政黨推薦一律以灰色表示。`+
+      (scaleNote()?'<br>'+scaleNote():'');
+  }else{
+    const p=parties[state.party];
+    const m = state.district>=0 ? distParty[state.district] : nationalByParty;
+    const tt = state.district>=0 ? distTotal[state.district] : nationalTotal;
+    const got = m.get(state.party)||0;
+    document.getElementById('legendTitle').textContent=`${p.name} 得票率 · ${scope}`;
+    box.innerHTML=`<div class="lgrow"><div class="lab"><b>${p.name}</b>`+
+      `<span>${scope} ${tt?pct(got/tt):'未推派人選'}</span></div>`+
+      `<div class="strip" style="background:${grad(p.color)}"></div></div>`;
+    document.getElementById('legendNote').innerHTML=
+      `深淺＝該${A.label}中 ${p.name} 所有候選人的得票率合計。該黨未推派人選的${A.label}顯示為色階最淺的一端。`+
+      (scaleNote()?'<br>'+scaleNote():'');
+  }
+  document.getElementById('legendAxis').innerHTML=axisHTML();
+}
+function renderScope(){
+  const bar=document.getElementById('scopeBar'), A=AGG[state.level];
+  let n=0;
+  for(let k=0;k<A.count;k++) if(A.tot[k]&&inFocus(k)) n++;
+  if(state.district<0){
+    bar.innerHTML=`<b>全國</b><span>${fmt(n)} 個${A.label}`+
+      (multiDistrict?` · ${fmt(districts.length)} 個選區`:'')+`</span>`;
+  }else{
+    const d=districts[state.district];
+    bar.innerHTML=`<b>${d.n}</b>`+
+      `<span>${fmt(n)} 個${A.label} · 有效票 ${fmt(distTotal[state.district])}</span>`+
+      `<button id="clearFocus">回到全國</button>`;
+    document.getElementById('clearFocus').onclick=()=>focusDistrict(-1);
+  }
+}
+function renderTiles(){
+  const d=state.district;
+  const m = d>=0 ? distParty[d] : nationalByParty;
+  const tot = d>=0 ? distTotal[d] : nationalTotal;
+  const rank=[...m.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
+  document.getElementById('tiles').innerHTML=rank.map(([p,n])=>{
+    const c=parties[p].color, sh=tot?n/tot:0;
+    return `<div class="tile"><i class="dot" style="background:${c}"></i>`+
+      `<span class="nm">${parties[p].name}</span>`+
+      `<span class="pc">${(sh*100).toFixed(1)}<small>%</small></span>`+
+      `<span class="vt">${fmt(n)} 票</span>`+
+      `<div class="bar"><i style="width:${(sh*100).toFixed(1)}%;background:${c}"></i></div></div>`;
+  }).join('');
+}
+
+/* ------------------------------------------------------------------ *
+ * 表格檢視
+ * ------------------------------------------------------------------ */
+let tableShown=0, tableRows=[];
+function buildTableRows(){
+  const A=AGG[state.level];
+  const q=document.getElementById('tableSearch').value.trim();
+  tableRows=[];
+  for(let k=0;k<A.count;k++){
+    if(!A.tot[k]||!inFocus(k)) continue;
+    const name=A.nameOf(k), ctx=A.ctx(k);
+    if(q && !(name+ctx).includes(q)) continue;
+    tableRows.push(k);
+  }
+  tableRows.sort((a,b)=>A.tot[b]-A.tot[a]);
+  tableShown=0;
+  document.getElementById('tableBox').innerHTML='';
+  document.getElementById('tableCount').textContent=`${fmt(tableRows.length)} 個${A.label}`;
+  renderTableChunk();
+}
+function renderTableChunk(){
+  const A=AGG[state.level], box=document.getElementById('tableBox');
+  const slice=tableRows.slice(tableShown,tableShown+200);
+  const extra = state.mode==='party' ? `<th>${parties[state.party].name}</th>` : '';
+  const head=tableShown===0
+    ? `<thead><tr><th>${A.label}</th><th>所屬</th><th>領先者</th><th>領先得票率</th>${extra}<th>有效票</th></tr></thead>`
+    : '';
+  const body=slice.map(k=>{
+    const w=A.win[k];
+    if(w<0) return `<tr><td>${A.nameOf(k)}</td><td>${A.ctx(k)}</td><td colspan="4">無資料</td></tr>`;
+    const c=cands[w], p=parties[c.p];
+    const cell = state.mode==='party' ? `<td>${pct(valueAt(k).share)}</td>` : '';
+    return `<tr><td>${A.nameOf(k)}</td><td>${A.ctx(k)}</td>`+
+      `<td class="win"><span class="dot" style="background:${p.color}"></span>${c.name}（${p.name}）</td>`+
+      `<td>${pct(A.share[k])}</td>${cell}<td>${fmt(A.tot[k])}</td></tr>`;
+  }).join('');
+  if(tableShown===0) box.innerHTML=`<table>${head}<tbody>${body}</tbody></table>`;
+  else box.querySelector('tbody').insertAdjacentHTML('beforeend',body);
+  tableShown+=slice.length;
+  const more=document.getElementById('moreBtn');
+  more.hidden=tableShown>=tableRows.length;
+  more.textContent=`顯示更多（還有 ${fmt(tableRows.length-tableShown)} 筆）`;
+}
+document.getElementById('moreBtn').onclick=renderTableChunk;
+document.getElementById('tableSearch').oninput=buildTableRows;
+
+/* ------------------------------------------------------------------ *
+ * 控制列
+ * ------------------------------------------------------------------ */
+function seg(id,fn){
+  document.getElementById(id).addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    [...e.currentTarget.children].forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+    fn(b.dataset.v);
+  });
+}
+seg('modeSeg',v=>{ state.mode=v; document.getElementById('partyCtl').hidden=(v!=='party'); refresh(); });
+seg('levelSeg',v=>{ state.level=v; state.locked=-1; showDetail(-1); refresh(); });
+seg('scaleSeg',v=>{ state.scale=v; refresh(); });
+
+const distSel=document.getElementById('distSel');
+if(!multiDistrict){
+  document.getElementById('distCtl').hidden=true;
+  document.getElementById('scaleCtl').hidden=true;
+}else{
+  const useGroups=districts.length>24;      // 立委、議員、村里長選區很多，依縣市分組
+  let html='<option value="-1">全部選區</option>', last=null;
+  districts.forEach((d,i)=>{
+    if(useGroups){
+      const cn=d.c>=0?counties[d.c].name:'其他';
+      if(cn!==last){ if(last!==null) html+='</optgroup>'; html+=`<optgroup label="${cn}">`; last=cn; }
+    }
+    html+=`<option value="${i}">${d.n}</option>`;
+  });
+  if(useGroups&&last!==null) html+='</optgroup>';
+  distSel.innerHTML=html;
+  distSel.onchange=e=>focusDistrict(+e.target.value);
+}
+
+seg('viewSeg',v=>{
+  state.view=v;
+  document.getElementById('mapView').hidden=(v!=='map');
+  document.getElementById('tableView').hidden=(v!=='table');
+  if(v==='table') buildTableRows();
+});
+document.getElementById('partySel').innerHTML=partyRank.map(([p,n])=>
+  `<option value="${p}">${parties[p].name}（${pct(n/nationalTotal)}）</option>`).join('');
+document.getElementById('partySel').value=String(state.party);
+document.getElementById('partySel').onchange=e=>{ state.party=+e.target.value; refresh(); };
+
+document.getElementById('themeBtn').onclick=()=>{
+  const now=document.documentElement.getAttribute('data-theme')
+    || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  document.documentElement.setAttribute('data-theme', now==='dark'?'light':'dark');
+  syncTheme();
+};
+function syncTheme(){
+  const attr=document.documentElement.getAttribute('data-theme');
+  DARK = attr ? attr==='dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  paint();
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{
+  if(!document.documentElement.getAttribute('data-theme')) syncTheme();
+});
+
+function refresh(){ paint(); if(state.view==='table') buildTableRows(); }
+
+/* ------------------------------------------------------------------ *
+ * 頁首 / 頁尾
+ * ------------------------------------------------------------------ */
+document.getElementById('title').textContent=meta.title;
+document.getElementById('subtitle').innerHTML=
+  meta.elections.map(e=>`<b>${e.name}</b> ${e.date}`).join(' ｜ ')+
+  ` ｜ 全國有效票 <b>${fmt(nationalTotal)}</b> ｜ ${fmt(nV)} 個村里／${fmt(nU)} 個開票單位`;
+document.getElementById('sources').innerHTML=
+  `資料來源：${meta.source}。產生時間 ${meta.generated}。`+
+  `離島（連江、金門、澎湖）以獨立小圖呈現，右上角標示相對主圖的放大倍率，其餘位置皆為真實地理位置（Web Mercator 投影）。`;
+document.getElementById('warnings').innerHTML=
+  (meta.warnings||[]).map(w=>`<div class="warn">※ ${w}</div>`).join('');
+
+syncTheme();
+applyView();
+showDetail(-1);
+fitMap();
+addEventListener('load', fitMap);
+</script>

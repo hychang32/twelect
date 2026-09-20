@@ -1,0 +1,9 @@
+# 下載的中選會原始 JSON（可重新抓）
+cache/
+# 村里界圖（首次執行會自動從 jsdelivr 下載）
+data/
+# 本機產生的地圖；要發布的放在 docs/
+out/
+__pycache__/
+*.pyc
+.DS_Store
